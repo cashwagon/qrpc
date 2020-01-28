@@ -1,0 +1,7 @@
+build-essential
+curl
+git
+make
+unzip
+vim
+wget

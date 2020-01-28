@@ -1,0 +1,23 @@
+{
+    "name": "QRPC",
+    "dockerComposeFile": [
+        "../docker-compose.yml",
+        "docker-compose.yml"
+    ],
+    "service": "workspace",
+    "workspaceFolder": "/app",
+    "settings": {
+        "terminal.integrated.shell.linux": "/bin/bash",
+        "go.useLanguageServer": true,
+        "go.lintTool": "golangci-lint",
+        "go.lintFlags": [
+            "--fast"
+        ],
+        "go.lintOnSave": "workspace"
+    },
+    // Add the IDs of extensions you want installed when the container is created in the array below.
+    "extensions": [
+        "ms-vscode.go",
+        "ms-azuretools.vscode-docker"
+    ]
+}

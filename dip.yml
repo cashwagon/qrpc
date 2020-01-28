@@ -1,0 +1,38 @@
+---
+version: '4.1'
+
+compose:
+  files:
+    - docker-compose.yml
+  project_name: qrpc
+
+interaction:
+  bash:
+    description: Open a Bash shell
+    service: app
+    command: /bin/bash
+    compose_run_options: [no-deps]
+  go:
+    description: Run Go commands
+    service: app
+    command: go
+  golangci-lint:
+    description: Run golangci-lint commands
+    service: app
+    command: golangci-lint
+    compose_run_options: [no-deps]
+  make:
+    description: Run Make commands
+    service: app
+    command: make
+  protoc:
+    description: Run Protoc commands
+    service: app
+    command: protoc
+    compose_run_options: [no-deps]
+
+provision:
+  - dip compose down --volumes
+  - dip compose up -d kafka
+  - dip compose up -d kafka-manager kafdrop
+  - dip bash -c './scripts/setup.sh'

@@ -1,0 +1,21 @@
+version: '3.4'
+
+services:
+  workspace:
+    # Overrides default command so things don't shut down after the process ends.
+    command: /bin/sh -c "while sleep 1000; do :; done"
+
+    # For ptrace-based debugger like C++, Go, and Rust.
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp:unconfined
+    
+    volumes:
+      - .:/app:cached
+      - go-modules:/go/pkg/mod
+      - vscode:/root/.vscode-server
+      - ~/.gitignore:/root/.gitignore:ro
+
+volumes:
+  vscode:

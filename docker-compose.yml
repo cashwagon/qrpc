@@ -1,0 +1,83 @@
+---
+version: '3.4'
+
+services:
+  workspace: &workspace
+    build:
+      context: .
+      dockerfile: ./.dockerdev/Dockerfile
+      args:
+        golangVersion: '1.13.6'
+        golangciLintVersion: '1.22.2'
+        protocVersion: '3.11.2'
+    image: qrpc:latest
+    command: /bin/sh -c 'exit 0'
+    entrypoint: ''
+    environment:
+      GO111MODULE: 'on'
+      HISTFILE: /app/.bash_history
+      EDITOR: vim
+    volumes:
+      - .:/app:cached
+      - go-modules:/go/pkg/mod
+      - ~/.ssh:/root/.ssh:ro
+      - ~/.gitconfig:/root/.gitconfig:ro
+
+  app:
+    <<: *workspace
+    stdin_open: true
+    tty: true
+    depends_on:
+      - kafka
+
+  zookeeper:
+    image: zookeeper:3.5
+    environment:
+      ZOO_ADMINSERVER_ENABLED: "false"
+    volumes:
+      - zookeeper-data:/data
+      - zookeeper-datalog:/datalog
+    # ports:
+    #   - '127.0.0.1:2181:2181'
+
+  kafka:
+    image: wurstmeister/kafka:2.12-2.3.0
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_JMX_OPTS: '-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=kafka -Dcom.sun.management.jmxremote.rmi.port=1099'
+      JMX_PORT: 1099
+    volumes:
+      - kafka:/kafka
+    # ports:
+    #   - '127.0.0.1:9092:9092'
+    #   - '127.0.0.1:9094:9094'
+    depends_on:
+      - zookeeper
+
+  kafka-manager:
+    image: hlebalbau/kafka-manager:latest
+    environment:
+      ZK_HOSTS: zookeeper:2181
+    ports:
+      - '127.0.0.1:10001:9000'
+    depends_on:
+      - zookeeper
+      - kafka
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop:latest
+    environment:
+      ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_BROKERCONNECT: kafka:9092
+    ports:
+      - '127.0.0.1:10002:9000'
+    depends_on:
+      - zookeeper
+      - kafka
+
+volumes:
+  go-modules:
+  zookeeper-data:
+  zookeeper-datalog:
+  kafka:
