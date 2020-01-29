@@ -143,6 +143,13 @@ issues:
       linters:
         - gochecknoglobals
         - gomnd
+        - funlen
+    
+    - path: 'internal/protoc-gen-go/.*.go'
+      linters:
+        - gochecknoglobals
+        - gochecknoinits
+        - funlen
 
   # Maximum issues count per one linter. Set to 0 to disable. Default is 50.
   max-issues-per-linter: 0

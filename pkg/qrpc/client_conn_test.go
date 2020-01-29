@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -47,7 +48,9 @@ func TestClientConn_Invoke(t *testing.T) {
 
 	p.On("Produce", ctx, msg).Return(nil)
 
-	c.Invoke(ctx, msg)
+	err := c.Invoke(ctx, msg)
+	assert.NoError(t, err)
+
 	p.AssertExpectations(t)
 }
 
@@ -57,6 +60,8 @@ func TestClientConn_Close(t *testing.T) {
 
 	p.On("Close").Return(nil)
 
-	c.Close()
+	err := c.Close()
+	assert.NoError(t, err)
+
 	p.AssertExpectations(t)
 }

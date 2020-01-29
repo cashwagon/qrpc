@@ -1,4 +1,4 @@
-// qrpc package provides qRPC implementation
+// Package qrpc provides qRPC implementation
 package qrpc
 
 import (
@@ -7,6 +7,10 @@ import (
 	"strings"
 )
 
+// The SupportPackageIsVersion variables are referenced from generated protocol
+// buffer files to ensure compatibility with the qRPC version used.
+// The latest support package version is 1.
+// These constants should not be referenced from any other code.
 const (
 	SupportPackageIsVersion1 = true
 )
@@ -33,6 +37,7 @@ type service struct {
 	md     map[string]*MethodDesc
 }
 
+// serviceToQueue converts the service name to the queue name by joining it with prefix
 func serviceToQueue(prefix, service string) string {
 	if prefix == "" {
 		return service
@@ -41,6 +46,7 @@ func serviceToQueue(prefix, service string) string {
 	return strings.Join([]string{prefix, service}, ".")
 }
 
+// queueToService converts the queue name to the service name by removing prefix from it
 func queueToService(prefix, queue string) string {
 	if prefix == "" {
 		return queue

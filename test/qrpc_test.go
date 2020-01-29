@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	firstUid    = "12345"
-	secondUid   = "54321"
+	firstUID    = "12345"
+	secondUID   = "54321"
 	topicPrefix = "test"
 	topic       = "test.qrpc.test.api.TestAPI"
 )
@@ -28,14 +28,14 @@ type server struct {
 }
 
 func (s *server) FirstMethod(ctx context.Context, req *pb.FirstMethodRequest) error {
-	assert.Equal(s.t, firstUid, req.Uid)
+	assert.Equal(s.t, firstUID, req.Uid)
 	s.done <- struct{}{}
 
 	return nil
 }
 
 func (s *server) SecondMethod(ctx context.Context, req *pb.SecondMethodRequest) error {
-	assert.Equal(s.t, secondUid, req.Uid)
+	assert.Equal(s.t, secondUID, req.Uid)
 	s.done <- struct{}{}
 
 	return nil
@@ -54,7 +54,10 @@ func TestQRPCKafka(t *testing.T) {
 		0,
 	)
 	require.NoError(t, err, "cannot connect to kafka")
-	defer kconn.Close()
+
+	defer func() {
+		require.NoError(t, kconn.Close())
+	}()
 
 	// Initialize server
 	done := make(chan struct{})
@@ -76,10 +79,12 @@ func TestQRPCKafka(t *testing.T) {
 	pb.RegisterTestAPIServer(srv, server)
 
 	go func() {
-		err := srv.Start()
-		require.NoError(t, err, "unexpected server exit")
+		require.NoError(t, srv.Start(), "unexpected server exit")
 	}()
-	defer srv.Stop()
+
+	defer func() {
+		require.NoError(t, srv.Stop())
+	}()
 
 	// Initialize client
 	conn := qrpc.NewClientConn(
@@ -95,13 +100,13 @@ func TestQRPCKafka(t *testing.T) {
 
 	// Send first request
 	err = cli.FirstMethod(ctx, &pb.FirstMethodRequest{
-		Uid: firstUid,
+		Uid: firstUID,
 	})
 	assert.NoError(t, err)
 
 	// Send second request
 	err = cli.SecondMethod(ctx, &pb.SecondMethodRequest{
-		Uid: secondUid,
+		Uid: secondUID,
 	})
 	assert.NoError(t, err)
 

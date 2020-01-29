@@ -23,11 +23,13 @@ func (m *WriterMock) Init(cfg *kafka.WriterConfig) {
 func (m *WriterMock) WriteMessages(ctx context.Context, msgs ...kafka.Message) error {
 	params := make([]interface{}, 0, len(msgs)+1)
 	params = append(params, ctx)
-	for _, msg := range msgs {
-		params = append(params, msg)
+
+	for i := range msgs {
+		params = append(params, msgs[i])
 	}
 
 	args := m.Called(params...)
+
 	return args.Error(0)
 }
 

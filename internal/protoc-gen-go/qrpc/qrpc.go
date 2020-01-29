@@ -103,10 +103,12 @@ func (q *qrpc) generateService(file *generator.FileDescriptor, service *pb.Servi
 	path := fmt.Sprintf("6,%d", index) // 6 means service.
 
 	origServName := service.GetName()
+
 	fullServName := origServName
 	if pkg := file.GetPackage(); pkg != "" {
 		fullServName = pkg + "." + fullServName
 	}
+
 	servName := generator.CamelCase(origServName)
 	deprecated := service.GetOptions().GetDeprecated()
 
@@ -128,7 +130,8 @@ func (q *qrpc) generateService(file *generator.FileDescriptor, service *pb.Servi
 			q.P("//")
 			q.P(deprecationComment)
 		}
-		q.P(q.generateClientSignature(servName, method))
+
+		q.P(q.generateClientSignature(method))
 	}
 
 	q.P("}")
@@ -144,6 +147,7 @@ func (q *qrpc) generateService(file *generator.FileDescriptor, service *pb.Servi
 	if deprecated {
 		q.P(deprecationComment)
 	}
+
 	q.P("func New", servName, "Client (cc *", qrpcPkg, ".ClientConn) ", servName, "Client {")
 	q.P("cc.SetService(", strconv.Quote(fullServName), ")")
 	q.P("return &", unexport(servName), "Client{cc}")
@@ -151,32 +155,38 @@ func (q *qrpc) generateService(file *generator.FileDescriptor, service *pb.Servi
 	q.P()
 
 	var methodIndex int
+
 	serviceDescVar := "_" + servName + "_serviceDesc"
+
 	// Client method implementations.
 	for _, method := range service.Method {
-		var descExpr string
-		descExpr = fmt.Sprintf("&%s.Methods[%d]", serviceDescVar, methodIndex)
 		methodIndex++
-		q.generateClientMethod(servName, serviceDescVar, method, descExpr)
+
+		q.generateClientMethod(servName, method)
 	}
 
 	// Server interface.
 	serverType := servName + "Server"
 	q.P("// ", serverType, " is the server API for ", servName, " service.")
+
 	if deprecated {
 		q.P("//")
 		q.P(deprecationComment)
 	}
 
 	q.P("type ", serverType, " interface {")
+
 	for i, method := range service.Method {
 		q.gen.PrintComments(fmt.Sprintf("%s,2,%d", path, i)) // 2 means method in a service.
+
 		if method.GetOptions().GetDeprecated() {
 			q.P("//")
 			q.P(deprecationComment)
 		}
-		q.P(q.generateServerSignature(servName, method))
+
+		q.P(q.generateServerSignature(method))
 	}
+
 	q.P("}")
 	q.P()
 
@@ -184,15 +194,17 @@ func (q *qrpc) generateService(file *generator.FileDescriptor, service *pb.Servi
 	if deprecated {
 		q.P(deprecationComment)
 	}
+
 	q.P("func Register", servName, "Server(s *", qrpcPkg, ".Server, srv ", serverType, ") {")
 	q.P("s.RegisterService(&", serviceDescVar, `, srv)`)
 	q.P("}")
 	q.P()
 
 	// Server handler implementations.
-	var handlerNames []string
+	handlerNames := make([]string, 0, len(service.Method))
+
 	for _, method := range service.Method {
-		hname := q.generateServerMethod(servName, fullServName, method)
+		hname := q.generateServerMethod(servName, method)
 		handlerNames = append(handlerNames, hname)
 	}
 
@@ -201,19 +213,21 @@ func (q *qrpc) generateService(file *generator.FileDescriptor, service *pb.Servi
 	q.P("ServiceName: ", strconv.Quote(fullServName), ",")
 	q.P("HandlerType: (*", serverType, ")(nil),")
 	q.P("Methods: []", qrpcPkg, ".MethodDesc{")
+
 	for i, method := range service.Method {
 		q.P("{")
 		q.P("MethodName: ", strconv.Quote(method.GetName()), ",")
 		q.P("Handler: ", handlerNames[i], ",")
 		q.P("},")
 	}
+
 	q.P("},")
 	q.P("}")
 	q.P()
 }
 
 // generateClientSignature returns the client-side signature for a method.
-func (q *qrpc) generateClientSignature(servName string, method *pb.MethodDescriptorProto) string {
+func (q *qrpc) generateClientSignature(method *pb.MethodDescriptorProto) string {
 	origMethName := method.GetName()
 	methName := generator.CamelCase(origMethName)
 
@@ -225,12 +239,12 @@ func (q *qrpc) generateClientSignature(servName string, method *pb.MethodDescrip
 	return fmt.Sprintf("%s(ctx %s.Context%s) error", methName, contextPkg, reqArg)
 }
 
-func (q *qrpc) generateClientMethod(servName, serviceDescVar string, method *pb.MethodDescriptorProto, descExpr string) {
+func (q *qrpc) generateClientMethod(servName string, method *pb.MethodDescriptorProto) {
 	if method.GetOptions().GetDeprecated() {
 		q.P(deprecationComment)
 	}
 
-	q.P("func (c *", unexport(servName), "Client) ", q.generateClientSignature(servName, method), "{")
+	q.P("func (c *", unexport(servName), "Client) ", q.generateClientSignature(method), "{")
 	q.P("data, err := proto.Marshal(in)")
 	q.P("if err != nil { return err }")
 	q.P("return c.cc.Invoke(ctx, ", qrpcPkg, ".Message{")
@@ -242,7 +256,7 @@ func (q *qrpc) generateClientMethod(servName, serviceDescVar string, method *pb.
 }
 
 // generateServerSignature returns the server-side signature for a method.
-func (q *qrpc) generateServerSignature(servName string, method *pb.MethodDescriptorProto) string {
+func (q *qrpc) generateServerSignature(method *pb.MethodDescriptorProto) string {
 	origMethName := method.GetName()
 	methName := generator.CamelCase(origMethName)
 
@@ -254,7 +268,7 @@ func (q *qrpc) generateServerSignature(servName string, method *pb.MethodDescrip
 	return methName + "(" + strings.Join(reqArgs, ", ") + ") error"
 }
 
-func (q *qrpc) generateServerMethod(servName, fullServName string, method *pb.MethodDescriptorProto) string {
+func (q *qrpc) generateServerMethod(servName string, method *pb.MethodDescriptorProto) string {
 	methName := generator.CamelCase(method.GetName())
 	hname := fmt.Sprintf("_%s_%s_Handler", servName, methName)
 	inType := q.typeName(method.GetInputType())

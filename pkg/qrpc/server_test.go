@@ -58,7 +58,7 @@ func TestServer_RegisterService(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			"Sucess",
+			"Success",
 			args{
 				sd: &ServiceDesc{
 					ServiceName: "qrpc.Hello",
@@ -151,9 +151,9 @@ func TestServer_Start(t *testing.T) {
 			Method: "Hello",
 			Data:   []byte("testdata"),
 		}
-
 		s := NewServer(c, "test")
-		s.RegisterService(
+
+		err := s.RegisterService(
 			&ServiceDesc{
 				ServiceName: "qrpc.Hello",
 				HandlerType: (*HelloServer)(nil),
@@ -169,13 +169,14 @@ func TestServer_Start(t *testing.T) {
 			},
 			&HelloServerMock{},
 		)
+		require.NoError(t, err)
 
 		ready := make(chan struct{})
 
 		c.On("Subscribe", []string{"test.qrpc.Hello"}).Return(nil).Once()
 
 		c.On("Consume", mock.AnythingOfType("MessageHandler")).Run(func(args mock.Arguments) {
-			args.Get(0).(MessageHandler)(msg)
+			assert.NoError(t, args.Get(0).(MessageHandler)(msg))
 			ready <- struct{}{}
 		}).Return(nil).Once()
 		c.On("Consume", mock.AnythingOfType("MessageHandler")).Return(nil)
@@ -183,14 +184,13 @@ func TestServer_Start(t *testing.T) {
 		c.On("Close").Return(nil)
 
 		go func() {
-			err := s.Start()
-			assert.NoError(t, err)
+			assert.NoError(t, s.Start())
 		}()
 
 		<-ready
 
-		err := s.Stop()
-		require.NoError(t, err)
+		err = s.Stop()
+		assert.NoError(t, err)
 
 		c.AssertExpectations(t)
 	})
@@ -198,7 +198,8 @@ func TestServer_Start(t *testing.T) {
 	t.Run("WhenSubscribeFail", func(t *testing.T) {
 		c := &ConsumerMock{}
 		s := NewServer(c, "test")
-		s.RegisterService(
+
+		err := s.RegisterService(
 			&ServiceDesc{
 				ServiceName: "qrpc.Hello",
 				HandlerType: (*HelloServer)(nil),
@@ -211,19 +212,20 @@ func TestServer_Start(t *testing.T) {
 			},
 			&HelloServerMock{},
 		)
+		require.NoError(t, err)
 
 		c.On("Subscribe", []string{"test.qrpc.Hello"}).Return(errors.New("subscribe error")).Once()
 
-		err := s.Start()
+		err = s.Start()
 		assert.Error(t, err)
 		c.AssertExpectations(t)
 	})
 
 	t.Run("WhenConsumeFail", func(t *testing.T) {
 		c := &ConsumerMock{}
-
 		s := NewServer(c, "test")
-		s.RegisterService(
+
+		err := s.RegisterService(
 			&ServiceDesc{
 				ServiceName: "qrpc.Hello",
 				HandlerType: (*HelloServer)(nil),
@@ -236,6 +238,7 @@ func TestServer_Start(t *testing.T) {
 			},
 			&HelloServerMock{},
 		)
+		require.NoError(t, err)
 
 		ready := make(chan struct{})
 
@@ -249,13 +252,12 @@ func TestServer_Start(t *testing.T) {
 		c.On("Close").Return(nil)
 
 		go func() {
-			err := s.Start()
-			assert.NoError(t, err)
+			assert.NoError(t, s.Start())
 		}()
 
 		<-ready
 
-		err := s.Stop()
+		err = s.Stop()
 		require.NoError(t, err)
 
 		c.AssertExpectations(t)
@@ -324,9 +326,10 @@ func TestServer_processMessage(t *testing.T) {
 
 		t.Run(tt.name, func(t *testing.T) {
 			s := NewServer(nil, "test")
-			s.RegisterService(&tt.sd, &HelloServerMock{})
+			err := s.RegisterService(&tt.sd, &HelloServerMock{})
+			require.NoError(t, err)
 
-			err := s.processMessage(msg)
+			err = s.processMessage(msg)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {

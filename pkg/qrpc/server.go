@@ -7,6 +7,7 @@ import (
 	"sync"
 )
 
+// Server represents the qRPC consumer
 type Server struct {
 	qPrefix string
 	mu      sync.Mutex
@@ -16,6 +17,7 @@ type Server struct {
 	done    chan struct{}
 }
 
+// NewServer allocates new Server struct
 func NewServer(c Consumer, qPrefix string) *Server {
 	return &Server{
 		qPrefix: qPrefix,
@@ -26,9 +28,8 @@ func NewServer(c Consumer, qPrefix string) *Server {
 	}
 }
 
-// RegisterService registers a service and its implementation to the qRPC
-// server. It is called from the IDL generated code. This must be called before
-// invoking Start.
+// RegisterService registers a service and its implementation to the qRPC server.
+// It is called from the IDL generated code. This must be called before invoking Start.
 func (s *Server) RegisterService(sd *ServiceDesc, ss interface{}) error {
 	ht := reflect.TypeOf(sd.HandlerType).Elem()
 	st := reflect.TypeOf(ss)
@@ -40,6 +41,8 @@ func (s *Server) RegisterService(sd *ServiceDesc, ss interface{}) error {
 	return s.register(sd, ss)
 }
 
+// Start executes the consuming loop.
+// In most cases it should be called in the separate goroutine.
 func (s *Server) Start() error {
 	queues := make([]string, 0, len(s.m))
 	for sName := range s.m {
@@ -63,10 +66,17 @@ func (s *Server) Start() error {
 	}
 }
 
+// Stop sends the signal to the server to shutdown and waits until it's exit.
+// The shutdown will happen only after processing the last consumed message.
 func (s *Server) Stop() error {
 	s.quit <- struct{}{}
 	<-s.done
-	return s.c.Close()
+
+	if err := s.c.Close(); err != nil {
+		return fmt.Errorf("cannot close server: %w", err)
+	}
+
+	return nil
 }
 
 func (s *Server) register(sd *ServiceDesc, ss interface{}) error {

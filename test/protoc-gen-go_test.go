@@ -53,22 +53,24 @@ func Test_ProtocGenGo(t *testing.T) {
 	protocBin := getProtoc(t)
 	projectPath, err := filepath.Abs("..")
 	require.NoError(t, err, "Cannot get project path")
+
 	binPath := filepath.Join(projectPath, "bin")
 
 	for _, tt := range protocGenGoTests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			os.Mkdir("./result", os.ModeDir|os.ModePerm|755)
+			err := os.Mkdir("./result", os.ModeDir|os.ModePerm|755)
+			require.NoError(t, err, "cannot create test results directory")
+
 			defer func() {
-				err := os.RemoveAll("./result")
-				require.NoError(t, err)
+				require.NoError(t, os.RemoveAll("./result"))
 			}()
 
 			golden := loadGolden(t, tt.golden)
 
 			pathEnv := os.Getenv("PATH")
 
-			cmd := exec.Command(protocBin, tt.args...)
+			cmd := exec.Command(protocBin, tt.args...) // nolint:gosec // Variable is safe
 			cmd.Dir = projectPath
 			cmd.Env = append(cmd.Env, fmt.Sprintf("PATH=%s:%s", binPath, pathEnv))
 

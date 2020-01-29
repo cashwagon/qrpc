@@ -17,11 +17,14 @@ func (w *kWriter) Init(cfg *kafka.WriterConfig) {
 	w.Writer = kafka.NewWriter(*cfg)
 }
 
+// Producer represents the wrapper on kafka.Writer.
+// It implements the qrpc.Producer interface.
 type Producer struct {
 	cfg *kafka.WriterConfig
 	w   Writer
 }
 
+// NewProducer allocates new Producer object
 func NewProducer(cfg *kafka.WriterConfig) *Producer {
 	return &Producer{
 		cfg: cfg,
@@ -29,11 +32,14 @@ func NewProducer(cfg *kafka.WriterConfig) *Producer {
 	}
 }
 
-func (p *Producer) SetQueue(queue string) {
+// SetQueue sets the producer topic (queue) and starts the producer process.
+// It must be called before Produce.
+func (p Producer) SetQueue(queue string) {
 	p.cfg.Topic = queue
 	p.w.Init(p.cfg)
 }
 
+// Produce sends the message to the topic.
 func (p Producer) Produce(ctx context.Context, msg qrpc.Message) error {
 	err := p.w.WriteMessages(ctx, kafka.Message{
 		Key:   []byte(msg.Method),
@@ -46,6 +52,7 @@ func (p Producer) Produce(ctx context.Context, msg qrpc.Message) error {
 	return nil
 }
 
+// Close closes the producer connection
 func (p Producer) Close() error {
 	return p.w.Close()
 }

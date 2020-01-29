@@ -1,4 +1,4 @@
-// kafka package implements Apache Kafka driver for qRPC
+// Package kafka implements Apache Kafka driver for qRPC
 package kafka
 
 import (
