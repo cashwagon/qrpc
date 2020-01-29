@@ -9,15 +9,26 @@ import (
 	"github.com/NightWolf007/qrpc/pkg/qrpc"
 )
 
+type kReader struct {
+	*kafka.Reader
+}
+
+func (r *kReader) Init(cfg *kafka.ReaderConfig) {
+	r.Reader = kafka.NewReader(*cfg)
+}
+
 type Consumer struct {
 	TopicPrefix string
 	cfg         *kafka.ReaderConfig
-	r           *kafka.Reader
+	r           Reader
 }
 
 func NewConsumer(cfg *kafka.ReaderConfig) *Consumer {
 	cfg.CommitInterval = 0
-	return &Consumer{cfg: cfg}
+	return &Consumer{
+		cfg: cfg,
+		r:   &kReader{},
+	}
 }
 
 func (c *Consumer) Subscribe(queues []string) error {
@@ -29,7 +40,7 @@ func (c *Consumer) Subscribe(queues []string) error {
 	// So we pick only the first topic from the list
 	// See: https://github.com/segmentio/kafka-go/issues/131
 	c.cfg.Topic = queues[0]
-	c.r = kafka.NewReader(*c.cfg)
+	c.r.Init(c.cfg)
 
 	return nil
 }
@@ -59,9 +70,5 @@ func (c Consumer) Consume(mh qrpc.MessageHandler) error {
 }
 
 func (c Consumer) Close() error {
-	if err := c.r.Close(); err != nil {
-		return fmt.Errorf("cannot close consumer: %w", err)
-	}
-
-	return nil
+	return c.r.Close()
 }

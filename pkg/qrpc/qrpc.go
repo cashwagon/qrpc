@@ -1,3 +1,4 @@
+// qrpc package provides qRPC implementation
 package qrpc
 
 import (

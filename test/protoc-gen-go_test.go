@@ -25,7 +25,7 @@ var protocGenGoTests = []struct {
 			"./test/proto/test_api.proto",
 		},
 		"test_api.pb.go",
-		"test_api.pb.proto.go",
+		"test_api.pb.proto.go.golden",
 	},
 	{
 		"GRPC",
@@ -35,7 +35,7 @@ var protocGenGoTests = []struct {
 			"./test/proto/test_api.proto",
 		},
 		"test_api.pb.go",
-		"test_api.pb.grpc.go",
+		"test_api.pb.grpc.go.golden",
 	},
 	{
 		"QRPC",
@@ -45,7 +45,7 @@ var protocGenGoTests = []struct {
 			"./test/proto/test_api.proto",
 		},
 		"test_api.pb.go",
-		"test_api.pb.qrpc.go",
+		"test_api.pb.qrpc.go.golden",
 	},
 }
 
