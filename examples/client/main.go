@@ -6,11 +6,11 @@ import (
 	"os"
 	"strings"
 
-	driver "github.com/NightWolf007/qrpc/pkg/drivers/kafka"
-	"github.com/NightWolf007/qrpc/pkg/qrpc"
+	driver "github.com/cashwagon/qrpc/pkg/drivers/kafka"
+	"github.com/cashwagon/qrpc/pkg/qrpc"
 	"github.com/segmentio/kafka-go"
 
-	"github.com/NightWolf007/qrpc/examples/pb"
+	"github.com/cashwagon/qrpc/examples/pb"
 )
 
 const (

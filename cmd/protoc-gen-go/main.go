@@ -25,8 +25,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/generator"
 
-	_ "github.com/NightWolf007/qrpc/internal/protoc-gen-go/qrpc"
 	_ "github.com/golang/protobuf/protoc-gen-go/grpc"
+	_ "github.com/cashwagon/qrpc/internal/protoc-gen-go/qrpc"
 )
 
 func main() {

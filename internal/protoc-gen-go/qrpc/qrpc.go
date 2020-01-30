@@ -22,7 +22,7 @@ const generatedCodeVersion = 1
 // relative to the import_prefix of the generator.Generator.
 const (
 	contextPkgPath = "context"
-	qrpcPkgPath    = "github.com/NightWolf007/qrpc/pkg/qrpc"
+	qrpcPkgPath    = "github.com/cashwagon/qrpc/pkg/qrpc"
 )
 
 // deprecationComment is the standard comment added to deprecated

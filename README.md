@@ -22,7 +22,7 @@ To use this software, you must:
 - Grab the code from the repository and install the `proto` package.
   The simplest way is to run:
   ```
-  go get -u github.com/NightWolf007/qrpc/cmd/protoc-gen-go
+  go get -u github.com/cashwagon/qrpc/cmd/protoc-gen-go
   ```
   The compiler plugin, `protoc-gen-go`, will be installed in `$GOPATH/bin`
   unless `$GOBIN` is set. It must be in your `$PATH` for the protocol
@@ -53,7 +53,7 @@ For now the only supported drivers for:
 To install this package, you need to install Go and setup your Go workspace on your computer. The simplest way to install the library is to run:
 
 ```shell
-go get -u github.com/NightWolf007/qrpc/pkg/qrpc
+go get -u github.com/cashwagon/qrpc/pkg/qrpc
 ```
 
 ### Usage

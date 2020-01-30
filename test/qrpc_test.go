@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	driver "github.com/NightWolf007/qrpc/pkg/drivers/kafka"
-	"github.com/NightWolf007/qrpc/pkg/qrpc"
-	"github.com/NightWolf007/qrpc/test/pb"
+	driver "github.com/cashwagon/qrpc/pkg/drivers/kafka"
+	"github.com/cashwagon/qrpc/pkg/qrpc"
+	"github.com/cashwagon/qrpc/test/pb"
 )
 
 const (

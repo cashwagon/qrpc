@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/NightWolf007/qrpc/pkg/qrpc"
+	"github.com/cashwagon/qrpc/pkg/qrpc"
 )
 
 type WriterMock struct {

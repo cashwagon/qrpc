@@ -1,4 +1,4 @@
-module github.com/NightWolf007/qrpc
+module github.com/cashwagon/qrpc
 
 go 1.13
 

@@ -6,7 +6,7 @@ import (
 
 	"github.com/segmentio/kafka-go"
 
-	"github.com/NightWolf007/qrpc/pkg/qrpc"
+	"github.com/cashwagon/qrpc/pkg/qrpc"
 )
 
 type kWriter struct {

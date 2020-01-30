@@ -6,7 +6,7 @@ package pb
 import (
 	context "context"
 	fmt "fmt"
-	qrpc "github.com/NightWolf007/qrpc/pkg/qrpc"
+	qrpc "github.com/cashwagon/qrpc/pkg/qrpc"
 	proto "github.com/golang/protobuf/proto"
 	_ "github.com/golang/protobuf/ptypes/empty"
 	math "math"
