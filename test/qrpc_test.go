@@ -3,6 +3,7 @@ package test
 import (
 	"context"
 	"log"
+	"os"
 	"strings"
 	"testing"
 
@@ -43,7 +44,11 @@ func (s *server) SecondMethod(ctx context.Context, req *pb.SecondMethodRequest) 
 
 func TestQRPCKafka(t *testing.T) {
 	ctx := context.Background()
-	brokers := []string{"kafka:9092"}
+
+	brokersList := os.Getenv("KAFKA_BROKERS")
+	require.NotEmpty(t, brokersList, "Cannot get Kafka brokers list. Use KAFKA_BROKERS env variable")
+
+	brokers := strings.Split(brokersList, ",")
 
 	// Create topic in kafka
 	kconn, err := kafka.DialLeader(

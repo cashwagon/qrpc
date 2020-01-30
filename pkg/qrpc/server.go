@@ -13,6 +13,7 @@ type Server struct {
 	mu      sync.Mutex
 	m       map[string]*service
 	c       Consumer
+	running bool
 	quit    chan struct{}
 	done    chan struct{}
 }
@@ -53,6 +54,10 @@ func (s *Server) Start() error {
 		return fmt.Errorf("cannot subscribe on topics: %w", err)
 	}
 
+	s.mu.Lock()
+	s.running = true
+	s.mu.Unlock()
+
 	for {
 		select {
 		case <-s.quit:
@@ -69,6 +74,12 @@ func (s *Server) Start() error {
 // Stop sends the signal to the server to shutdown and waits until it's exit.
 // The shutdown will happen only after processing the last consumed message.
 func (s *Server) Stop() error {
+	s.mu.Lock()
+	if !s.running {
+		return nil
+	}
+	s.mu.Unlock()
+
 	s.quit <- struct{}{}
 	<-s.done
 

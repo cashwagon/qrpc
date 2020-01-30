@@ -17,6 +17,7 @@ services:
       GO111MODULE: 'on'
       HISTFILE: /app/.bash_history
       EDITOR: vim
+      KAFKA_BROKERS: kafka:9092
     volumes:
       - .:/app:cached
       - go-modules:/go/pkg/mod

@@ -188,6 +188,7 @@ func TestServer_Start(t *testing.T) {
 		}()
 
 		<-ready
+		assert.True(t, s.running)
 
 		err = s.Stop()
 		assert.NoError(t, err)
@@ -218,6 +219,7 @@ func TestServer_Start(t *testing.T) {
 
 		err = s.Start()
 		assert.Error(t, err)
+		assert.False(t, s.running)
 		c.AssertExpectations(t)
 	})
 
@@ -256,6 +258,7 @@ func TestServer_Start(t *testing.T) {
 		}()
 
 		<-ready
+		assert.True(t, s.running)
 
 		err = s.Stop()
 		require.NoError(t, err)
