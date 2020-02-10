@@ -2,6 +2,7 @@ package test
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,41 +12,33 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type protocGenGoTestExepectation struct {
+	resultFile string
+	goldenFile string
+}
+
 var protocGenGoTests = []struct {
-	name   string
-	args   []string
-	result string
-	golden string
+	name         string
+	args         []string
+	expectations []protocGenGoTestExepectation
 }{
-	{
-		"Proto",
-		[]string{
-			"-I=./test/proto",
-			"--go_out=paths=source_relative:./test/result",
-			"./test/proto/test_api.proto",
-		},
-		"test_api.pb.go",
-		"test_api.pb.proto.go.golden",
-	},
-	{
-		"GRPC",
-		[]string{
-			"-I=./test/proto",
-			"--go_out=plugins=grpc,paths=source_relative:./test/result",
-			"./test/proto/test_api.proto",
-		},
-		"test_api.pb.go",
-		"test_api.pb.grpc.go.golden",
-	},
 	{
 		"QRPC",
 		[]string{
 			"-I=./test/proto",
-			"--go_out=plugins=qrpc,paths=source_relative:./test/result",
+			"--qrpcgo_out=./test/result",
 			"./test/proto/test_api.proto",
 		},
-		"test_api.pb.go",
-		"test_api.pb.qrpc.go.golden",
+		[]protocGenGoTestExepectation{
+			{
+				"caller/test_api.pb.go",
+				"caller/test_api.pb.go.golden",
+			},
+			{
+				"handler/test_api.pb.go",
+				"handler/test_api.pb.go.golden",
+			},
+		},
 	},
 }
 
@@ -66,8 +59,6 @@ func Test_ProtocGenGo(t *testing.T) {
 				require.NoError(t, os.RemoveAll("./result"))
 			}()
 
-			golden := loadGolden(t, tt.golden)
-
 			pathEnv := os.Getenv("PATH")
 
 			cmd := exec.Command(protocBin, tt.args...) // nolint:gosec // Variable is safe
@@ -77,8 +68,51 @@ func Test_ProtocGenGo(t *testing.T) {
 			output, err := cmd.CombinedOutput()
 			require.NoError(t, err, "Cannot execute protoc '%s':\n%s", protocBin, output)
 
-			result := loadResult(t, tt.result)
-			assert.Equal(t, string(golden), string(result))
+			for _, exp := range tt.expectations {
+				result := loadResult(t, exp.resultFile)
+				golden := loadGolden(t, exp.goldenFile)
+
+				assert.Equal(t, string(golden), string(result))
+			}
 		})
 	}
+}
+
+func loadGolden(t *testing.T, name string) []byte {
+	t.Helper()
+
+	return loadFile(t, filepath.Join("golden", filepath.Clean(name)))
+}
+
+func loadResult(t *testing.T, name string) []byte {
+	t.Helper()
+
+	return loadFile(t, filepath.Join("result", filepath.Clean(name)))
+}
+
+func loadFile(t *testing.T, name string) []byte {
+	t.Helper()
+
+	file, err := os.Open(filepath.Clean(name))
+	require.NoErrorf(t, err, "Cannot open file %s", name)
+
+	defer func() {
+		require.NoError(t, file.Close())
+	}()
+
+	data, err := ioutil.ReadAll(file)
+	require.NoError(t, err, "Cannot read file %s", name)
+
+	return data
+}
+
+func getProtoc(t *testing.T) string {
+	t.Helper()
+
+	binaryPath := os.Getenv("PROTOC")
+	if binaryPath != "" {
+		return binaryPath
+	}
+
+	return "protoc"
 }

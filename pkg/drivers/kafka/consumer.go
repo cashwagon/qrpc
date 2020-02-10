@@ -3,11 +3,14 @@ package kafka
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/segmentio/kafka-go"
 
 	"github.com/cashwagon/qrpc/pkg/qrpc"
 )
+
+const fetchTimeout = 5 * time.Second
 
 type kReader struct {
 	*kafka.Reader
@@ -57,7 +60,8 @@ func (c Consumer) Subscribe(queues []string) error {
 // It fetches the message from the Kafka, calls qrpc.MessageHandler to process it
 // and commits it
 func (c Consumer) Consume(mh qrpc.MessageHandler) error {
-	ctx := context.Background()
+	ctx, cancelFn := context.WithTimeout(context.Background(), fetchTimeout)
+	defer cancelFn()
 
 	msg, err := c.r.FetchMessage(ctx)
 	if err != nil {
@@ -73,7 +77,7 @@ func (c Consumer) Consume(mh qrpc.MessageHandler) error {
 		return fmt.Errorf("cannot process message: %w", err)
 	}
 
-	if err := c.r.CommitMessages(ctx, msg); err != nil {
+	if err := c.r.CommitMessages(context.Background(), msg); err != nil {
 		return fmt.Errorf("cannot commit message: %w", err)
 	}
 

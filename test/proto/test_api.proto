@@ -3,23 +3,34 @@ package qrpc.test.api;
 
 import "google/protobuf/empty.proto";
 
-option go_package = "test/result";
+option go_package = "github.com/cashwagon/qrpc/test/pb";
 
 // TestAPI provides methods to test qRPC.
 service TestAPI {
-  // FirstMethod tests first method.
-  rpc FirstMethod(FirstMethodRequest) returns (google.protobuf.Empty);
+  // UnaryMethod tests unary method.
+  rpc UnaryMethod(UnaryMethodRequest) returns (google.protobuf.Empty);
 
-  // SecondMethod tests second method.
-  rpc SecondMethod(SecondMethodRequest) returns (google.protobuf.Empty);
+  // BinaryMethod tests binary method.
+  rpc BinaryMethod(BinaryMethodRequest) returns (BinaryMethodResponse);
 }
 
-// FirstMethodRequest - request message for FirstMethod rpc.
-message FirstMethodRequest {
+// Test2API provides methods to test qRPC.
+service Test2API {
+  // EmptyMethod tests empty method.
+  rpc EmptyMethod(google.protobuf.Empty) returns (google.protobuf.Empty);
+}
+
+// UnaryMethodRequest - request message for UnaryMethod rpc.
+message UnaryMethodRequest {
   string uid = 1;
 }
 
-// SecondMethodRequest - request message for SecondMethod rpc.
-message SecondMethodRequest {
+// BinaryMethodRequest - request message for BinaryMethod rpc.
+message BinaryMethodRequest {
+  string uid = 1;
+}
+
+// BinaryMethodResponse - response message for BinaryMethod rpc.
+message BinaryMethodResponse {
   string uid = 1;
 }
