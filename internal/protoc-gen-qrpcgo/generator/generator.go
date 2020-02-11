@@ -212,7 +212,9 @@ func goFileName(tp, name string) string {
 		name = name[:len(name)-len(ext)]
 	}
 
-	return fmt.Sprintf("%s/%s.pb.go", tp, name)
+	dir, fname := path.Split(name)
+
+	return path.Join(dir, tp, fmt.Sprintf("%s.pb.go", fname))
 }
 
 // pkgName returns alias for package path
