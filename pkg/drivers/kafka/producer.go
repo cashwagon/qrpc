@@ -42,8 +42,11 @@ func (p Producer) SetQueue(queue string) {
 // Produce sends the message to the topic.
 func (p Producer) Produce(ctx context.Context, msg qrpc.Message) error {
 	err := p.w.WriteMessages(ctx, kafka.Message{
-		Key:   []byte(msg.Method),
 		Value: msg.Data,
+		Headers: []kafka.Header{
+			{Key: methodHeader, Value: []byte(msg.Method)},
+			{Key: requestIDHeader, Value: []byte(msg.RequestID)},
+		},
 	})
 	if err != nil {
 		return fmt.Errorf("cannot write message: %w", err)

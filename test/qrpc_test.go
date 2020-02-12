@@ -25,19 +25,23 @@ const (
 )
 
 type handlerServer struct {
-	t       *testing.T
-	brokers []string
-	done    chan struct{}
+	t           *testing.T
+	brokers     []string
+	done        chan struct{}
+	unaryReqID  string
+	binaryReqID string
 }
 
-func (s *handlerServer) UnaryMethod(ctx context.Context, req *pb.UnaryMethodRequest) error {
+func (s *handlerServer) UnaryMethod(ctx context.Context, reqID string, req *pb.UnaryMethodRequest) error {
+	assert.Equal(s.t, s.unaryReqID, reqID)
 	assert.Equal(s.t, firstUID, req.GetUid())
 	s.done <- struct{}{}
 
 	return nil
 }
 
-func (s *handlerServer) BinaryMethod(ctx context.Context, req *pb.BinaryMethodRequest) error {
+func (s *handlerServer) BinaryMethod(ctx context.Context, reqID string, req *pb.BinaryMethodRequest) error {
+	assert.Equal(s.t, s.binaryReqID, reqID)
 	assert.Equal(s.t, secondUID, req.GetUid())
 
 	// Initialize handler client
@@ -50,7 +54,7 @@ func (s *handlerServer) BinaryMethod(ctx context.Context, req *pb.BinaryMethodRe
 	cli := handler.NewTestAPIClient(conn)
 
 	// Send response
-	err := cli.BinaryMethod(ctx, &pb.BinaryMethodResponse{
+	err := cli.BinaryMethod(ctx, reqID, &pb.BinaryMethodResponse{
 		Uid: req.GetUid(),
 	})
 	require.NoError(s.t, err)
@@ -61,11 +65,13 @@ func (s *handlerServer) BinaryMethod(ctx context.Context, req *pb.BinaryMethodRe
 }
 
 type callerServer struct {
-	t    *testing.T
-	done chan struct{}
+	t     *testing.T
+	done  chan struct{}
+	reqID string
 }
 
-func (s *callerServer) BinaryMethod(ctx context.Context, resp *pb.BinaryMethodResponse) error {
+func (s *callerServer) BinaryMethod(ctx context.Context, reqID string, resp *pb.BinaryMethodResponse) error {
+	assert.Equal(s.t, s.reqID, reqID)
 	assert.Equal(s.t, secondUID, resp.GetUid())
 	s.done <- struct{}{}
 
@@ -126,16 +132,21 @@ func TestQRPCKafka(t *testing.T) {
 	cli := caller.NewTestAPIClient(conn)
 
 	// Send first request
-	err := cli.UnaryMethod(ctx, &pb.UnaryMethodRequest{
+	unaryReqID, err := cli.UnaryMethod(ctx, &pb.UnaryMethodRequest{
 		Uid: firstUID,
 	})
 	assert.NoError(t, err)
+	assert.NotEmpty(t, unaryReqID)
+	hs.unaryReqID = unaryReqID
 
 	// Send second request
-	err = cli.BinaryMethod(ctx, &pb.BinaryMethodRequest{
+	binaryReqID, err := cli.BinaryMethod(ctx, &pb.BinaryMethodRequest{
 		Uid: secondUID,
 	})
 	assert.NoError(t, err)
+	assert.NotEmpty(t, binaryReqID)
+	hs.binaryReqID = binaryReqID
+	cs.reqID = binaryReqID
 
 	// Close connection to flush producer buffer
 	err = conn.Close()

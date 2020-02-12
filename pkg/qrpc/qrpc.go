@@ -15,7 +15,7 @@ const (
 	SupportPackageIsVersion1 = true
 )
 
-type methodHandler func(srv interface{}, ctx context.Context, msg []byte) error
+type methodHandler func(srv interface{}, ctx context.Context, requestID string, msg []byte) error
 
 // MethodDesc represents an RPC service's method specification.
 type MethodDesc struct {

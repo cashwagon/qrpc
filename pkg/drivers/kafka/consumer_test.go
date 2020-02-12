@@ -87,11 +87,22 @@ func TestConsumer_Subscribe(t *testing.T) {
 }
 
 func TestConsumer_Consume(t *testing.T) {
+	method := "Hello"
+	reqID := "123456578568"
 	msg := kafka.Message{
 		Topic:     "test.qrpc.Hello",
 		Partition: 1,
-		Key:       []byte("Hello"),
-		Value:     []byte("testdata"),
+		Headers: []kafka.Header{
+			{
+				Key:   methodHeader,
+				Value: []byte(method),
+			},
+			{
+				Key:   requestIDHeader,
+				Value: []byte(reqID),
+			},
+		},
+		Value: []byte("testdata"),
 	}
 
 	t.Run("WhenSuccess", func(t *testing.T) {
@@ -104,7 +115,8 @@ func TestConsumer_Consume(t *testing.T) {
 
 		err := c.Consume(func(m qrpc.Message) error {
 			assert.Equal(t, msg.Topic, m.Queue)
-			assert.Equal(t, string(msg.Key), m.Method)
+			assert.Equal(t, method, m.Method)
+			assert.Equal(t, reqID, m.RequestID)
 			assert.Equal(t, msg.Value, m.Data)
 			return nil
 		})
@@ -138,7 +150,8 @@ func TestConsumer_Consume(t *testing.T) {
 
 		err := c.Consume(func(m qrpc.Message) error {
 			assert.Equal(t, msg.Topic, m.Queue)
-			assert.Equal(t, string(msg.Key), m.Method)
+			assert.Equal(t, method, m.Method)
+			assert.Equal(t, reqID, m.RequestID)
 			assert.Equal(t, msg.Value, m.Data)
 			return errors.New("MessageHandler error")
 		})
@@ -157,7 +170,8 @@ func TestConsumer_Consume(t *testing.T) {
 
 		err := c.Consume(func(m qrpc.Message) error {
 			assert.Equal(t, msg.Topic, m.Queue)
-			assert.Equal(t, string(msg.Key), m.Method)
+			assert.Equal(t, method, m.Method)
+			assert.Equal(t, reqID, m.RequestID)
 			assert.Equal(t, msg.Value, m.Data)
 			return nil
 		})

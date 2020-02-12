@@ -33,7 +33,7 @@ const _ = qrpc.SupportPackageIsVersion{{ .GeneratedCodeVersion }}
 // {{ $clientInt }} is the client API for {{ $service }} service.
 type {{ $clientInt }} interface {
 	{{- range (.Methods | filterBinaryMethods) }}
-	{{ .Name }}(context.Context, *{{ .OutType }}) error
+	{{ .Name }}(ctx context.Context, reqID string, out *{{ .OutType }}) error
 	{{- end }}
 }
 
@@ -48,15 +48,16 @@ func New{{ $clientInt }}(cc *qrpc.ClientConn) {{ $clientInt }} {
 
 {{- range (.Methods | filterBinaryMethods ) }}
 
-func (c *{{ $clientType }}) {{ .Name }}(ctx context.Context, in *{{ .OutType }}) error {
-	data, err := proto.Marshal(in)
+func (c *{{ $clientType }}) {{ .Name }}(ctx context.Context, reqID string, out *{{ .OutType }}) error {
+	data, err := proto.Marshal(out)
 	if err != nil {
 		return err
 	}
 
 	return c.cc.Invoke(ctx, qrpc.Message{
-		Method: "{{ .Name }}",
-		Data:   data,
+		Method:    "{{ .Name }}",
+		RequestID: reqID,
+		Data:      data,
 	})
 }
 {{- end }}
@@ -65,7 +66,7 @@ func (c *{{ $clientType }}) {{ .Name }}(ctx context.Context, in *{{ .OutType }})
 // {{ $serverInt }} is the server API for {{ $service }} service.
 type {{ $serverInt }} interface {
 	{{- range .Methods }}
-	{{ .Name }}(context.Context, *{{ .InType }}) error
+	{{ .Name }}(ctx context.Context, reqID string, in *{{ .InType }}) error
 	{{- end }}
 }
 
@@ -75,14 +76,14 @@ func Register{{ $serverInt }}(s *qrpc.Server, srv {{ $serverInt }}) {
 
 {{- range .Methods }}
 
-func _{{ $service }}_{{ .Name }}_Handler(srv interface{}, ctx context.Context, msg []byte) error {
+func _{{ $service }}_{{ .Name }}_Handler(srv interface{}, ctx context.Context, reqID string, msg []byte) error {
 	in := new({{ .InType }})
 
 	if err := proto.Unmarshal(msg, in); err != nil {
 		return err
 	}
 
-	return srv.({{ $serverInt }}).{{ .Name }}(ctx, in)
+	return srv.({{ $serverInt }}).{{ .Name }}(ctx, reqID, in)
 }
 {{- end }}
 

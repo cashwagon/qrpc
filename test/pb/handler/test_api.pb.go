@@ -7,9 +7,9 @@ import (
 	"context"
 
 	"github.com/cashwagon/qrpc/pkg/qrpc"
-	_pb "github.com/cashwagon/qrpc/test/pb"
 	"github.com/golang/protobuf/proto"
 	empty "github.com/golang/protobuf/ptypes/empty"
+	_pb "github.com/cashwagon/qrpc/test/pb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -18,7 +18,7 @@ const _ = qrpc.SupportPackageIsVersion1
 
 // TestAPIClient is the client API for TestAPI service.
 type TestAPIClient interface {
-	BinaryMethod(context.Context, *_pb.BinaryMethodResponse) error
+	BinaryMethod(ctx context.Context, reqID string, out *_pb.BinaryMethodResponse) error
 }
 
 type testAPIClient struct {
@@ -30,46 +30,47 @@ func NewTestAPIClient(cc *qrpc.ClientConn) TestAPIClient {
 	return &testAPIClient{cc}
 }
 
-func (c *testAPIClient) BinaryMethod(ctx context.Context, in *_pb.BinaryMethodResponse) error {
-	data, err := proto.Marshal(in)
+func (c *testAPIClient) BinaryMethod(ctx context.Context, reqID string, out *_pb.BinaryMethodResponse) error {
+	data, err := proto.Marshal(out)
 	if err != nil {
 		return err
 	}
 
 	return c.cc.Invoke(ctx, qrpc.Message{
-		Method: "BinaryMethod",
-		Data:   data,
+		Method:    "BinaryMethod",
+		RequestID: reqID,
+		Data:      data,
 	})
 }
 
 // TestAPIServer is the server API for TestAPI service.
 type TestAPIServer interface {
-	UnaryMethod(context.Context, *_pb.UnaryMethodRequest) error
-	BinaryMethod(context.Context, *_pb.BinaryMethodRequest) error
+	UnaryMethod(ctx context.Context, reqID string, in *_pb.UnaryMethodRequest) error
+	BinaryMethod(ctx context.Context, reqID string, in *_pb.BinaryMethodRequest) error
 }
 
 func RegisterTestAPIServer(s *qrpc.Server, srv TestAPIServer) {
 	s.RegisterService(&_TestAPI_serviceDesc, srv)
 }
 
-func _TestAPI_UnaryMethod_Handler(srv interface{}, ctx context.Context, msg []byte) error {
+func _TestAPI_UnaryMethod_Handler(srv interface{}, ctx context.Context, reqID string, msg []byte) error {
 	in := new(_pb.UnaryMethodRequest)
 
 	if err := proto.Unmarshal(msg, in); err != nil {
 		return err
 	}
 
-	return srv.(TestAPIServer).UnaryMethod(ctx, in)
+	return srv.(TestAPIServer).UnaryMethod(ctx, reqID, in)
 }
 
-func _TestAPI_BinaryMethod_Handler(srv interface{}, ctx context.Context, msg []byte) error {
+func _TestAPI_BinaryMethod_Handler(srv interface{}, ctx context.Context, reqID string, msg []byte) error {
 	in := new(_pb.BinaryMethodRequest)
 
 	if err := proto.Unmarshal(msg, in); err != nil {
 		return err
 	}
 
-	return srv.(TestAPIServer).BinaryMethod(ctx, in)
+	return srv.(TestAPIServer).BinaryMethod(ctx, reqID, in)
 }
 
 var _TestAPI_serviceDesc = qrpc.ServiceDesc{
@@ -78,32 +79,32 @@ var _TestAPI_serviceDesc = qrpc.ServiceDesc{
 	Methods: []qrpc.MethodDesc{
 		{
 			MethodName: "UnaryMethod",
-			Handler:    _TestAPI_UnaryMethod_Handler,
+			Handler: _TestAPI_UnaryMethod_Handler,
 		},
 		{
 			MethodName: "BinaryMethod",
-			Handler:    _TestAPI_BinaryMethod_Handler,
+			Handler: _TestAPI_BinaryMethod_Handler,
 		},
 	},
 }
 
 // Test2APIServer is the server API for Test2API service.
 type Test2APIServer interface {
-	EmptyMethod(context.Context, *empty.Empty) error
+	EmptyMethod(ctx context.Context, reqID string, in *empty.Empty) error
 }
 
 func RegisterTest2APIServer(s *qrpc.Server, srv Test2APIServer) {
 	s.RegisterService(&_Test2API_serviceDesc, srv)
 }
 
-func _Test2API_EmptyMethod_Handler(srv interface{}, ctx context.Context, msg []byte) error {
+func _Test2API_EmptyMethod_Handler(srv interface{}, ctx context.Context, reqID string, msg []byte) error {
 	in := new(empty.Empty)
 
 	if err := proto.Unmarshal(msg, in); err != nil {
 		return err
 	}
 
-	return srv.(Test2APIServer).EmptyMethod(ctx, in)
+	return srv.(Test2APIServer).EmptyMethod(ctx, reqID, in)
 }
 
 var _Test2API_serviceDesc = qrpc.ServiceDesc{
@@ -112,7 +113,7 @@ var _Test2API_serviceDesc = qrpc.ServiceDesc{
 	Methods: []qrpc.MethodDesc{
 		{
 			MethodName: "EmptyMethod",
-			Handler:    _Test2API_EmptyMethod_Handler,
+			Handler: _Test2API_EmptyMethod_Handler,
 		},
 	},
 }

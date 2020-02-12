@@ -7,6 +7,11 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
+const (
+	methodHeader    = "QRPC_METHOD"
+	requestIDHeader = "QPRC_REQUEST_ID"
+)
+
 // Reader represents abstract reader interface to wrap kafka.Reader
 type Reader interface {
 	Init(cfg *kafka.ReaderConfig)
@@ -20,4 +25,14 @@ type Writer interface {
 	Init(cfg *kafka.WriterConfig)
 	WriteMessages(ctx context.Context, msgs ...kafka.Message) error
 	Close() error
+}
+
+func fetchHeader(headers []kafka.Header, key string) []byte {
+	for _, h := range headers {
+		if h.Key == key {
+			return h.Value
+		}
+	}
+
+	return nil
 }

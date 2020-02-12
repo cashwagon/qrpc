@@ -52,8 +52,9 @@ func TestProducer_SetQueue(t *testing.T) {
 func TestProducer_Produce(t *testing.T) {
 	ctx := context.Background()
 	msg := qrpc.Message{
-		Method: "Hello",
-		Data:   []byte("testdata"),
+		Method:    "Hello",
+		RequestID: "124325215",
+		Data:      []byte("testdata"),
 	}
 
 	t.Run("WhenSuccess", func(t *testing.T) {
@@ -62,7 +63,10 @@ func TestProducer_Produce(t *testing.T) {
 		p.w = w
 
 		w.On("WriteMessages", ctx, kafka.Message{
-			Key:   []byte(msg.Method),
+			Headers: []kafka.Header{
+				{Key: methodHeader, Value: []byte(msg.Method)},
+				{Key: requestIDHeader, Value: []byte(msg.RequestID)},
+			},
 			Value: msg.Data,
 		}).Return(nil).Once()
 
@@ -78,7 +82,10 @@ func TestProducer_Produce(t *testing.T) {
 		p.w = w
 
 		w.On("WriteMessages", ctx, kafka.Message{
-			Key:   []byte(msg.Method),
+			Headers: []kafka.Header{
+				{Key: methodHeader, Value: []byte(msg.Method)},
+				{Key: requestIDHeader, Value: []byte(msg.RequestID)},
+			},
 			Value: msg.Data,
 		}).Return(errors.New("write error")).Once()
 

@@ -65,13 +65,19 @@ func (c Consumer) Consume(mh qrpc.MessageHandler) error {
 
 	msg, err := c.r.FetchMessage(ctx)
 	if err != nil {
+		// Return when context deadline exceeded to start new fetch
+		if ctx.Err() != nil {
+			return nil
+		}
+
 		return fmt.Errorf("cannot read message: %w", err)
 	}
 
 	err = mh(qrpc.Message{
-		Queue:  msg.Topic,
-		Method: string(msg.Key),
-		Data:   msg.Value,
+		Queue:     msg.Topic,
+		Method:    string(fetchHeader(msg.Headers, methodHeader)),
+		RequestID: string(fetchHeader(msg.Headers, requestIDHeader)),
+		Data:      msg.Value,
 	})
 	if err != nil {
 		return fmt.Errorf("cannot process message: %w", err)

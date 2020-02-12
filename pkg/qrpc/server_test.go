@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -147,9 +148,10 @@ func TestServer_Start(t *testing.T) {
 	t.Run("WhenSuccess", func(t *testing.T) {
 		c := &ConsumerMock{}
 		msg := Message{
-			Queue:  "test.qrpc.Hello",
-			Method: "Hello",
-			Data:   []byte("testdata"),
+			Queue:     "test.qrpc.Hello",
+			Method:    "Hello",
+			RequestID: uuid.New().String(),
+			Data:      []byte("testdata"),
 		}
 		s := NewServer(c, "test")
 
@@ -160,7 +162,8 @@ func TestServer_Start(t *testing.T) {
 				Methods: []MethodDesc{
 					{
 						MethodName: "Hello",
-						Handler: func(srv interface{}, ctx context.Context, m []byte) error {
+						Handler: func(srv interface{}, ctx context.Context, reqID string, m []byte) error {
+							assert.Equal(t, msg.RequestID, reqID)
 							assert.Equal(t, msg.Data, m)
 							return nil
 						},
@@ -269,9 +272,10 @@ func TestServer_Start(t *testing.T) {
 
 func TestServer_processMessage(t *testing.T) {
 	msg := Message{
-		Queue:  "test.qrpc.Hello",
-		Method: "Hello",
-		Data:   []byte("testdata"),
+		Queue:     "test.qrpc.Hello",
+		Method:    "Hello",
+		RequestID: uuid.New().String(),
+		Data:      []byte("testdata"),
 	}
 
 	tests := []struct {
@@ -287,7 +291,8 @@ func TestServer_processMessage(t *testing.T) {
 				Methods: []MethodDesc{
 					{
 						MethodName: "Hello",
-						Handler: func(srv interface{}, ctx context.Context, m []byte) error {
+						Handler: func(srv interface{}, ctx context.Context, reqID string, m []byte) error {
+							assert.Equal(t, msg.RequestID, reqID)
 							assert.Equal(t, msg.Data, m)
 							return nil
 						},
@@ -304,7 +309,8 @@ func TestServer_processMessage(t *testing.T) {
 				Methods: []MethodDesc{
 					{
 						MethodName: "NotHello",
-						Handler: func(srv interface{}, ctx context.Context, m []byte) error {
+						Handler: func(srv interface{}, ctx context.Context, reqID string, m []byte) error {
+							assert.Equal(t, msg.RequestID, reqID)
 							assert.Equal(t, msg.Data, m)
 							return nil
 						},

@@ -1,15 +1,17 @@
 syntax = "proto3";
 package qrpc.example.api;
 
-import "google/protobuf/empty.proto";
-
 option go_package = "github.com/cashwagon/qrpc/examples/pb";
 
 // EchoAPI is example qRPC API.
 service EchoAPI {
-  rpc Echo(EchoRequest) returns (google.protobuf.Empty);
+  rpc Echo(EchoRequest) returns (EchoResponse);
 }
 
 message EchoRequest {
+  string greeting = 1;
+}
+
+message EchoResponse {
   string greeting = 1;
 }

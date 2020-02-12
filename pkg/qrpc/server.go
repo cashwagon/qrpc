@@ -126,5 +126,5 @@ func (s *Server) processMessage(msg Message) error {
 		return fmt.Errorf("unknown method %s for service %s", msg.Method, msg.Queue)
 	}
 
-	return md.Handler(srv.server, context.Background(), msg.Data)
+	return md.Handler(srv.server, context.Background(), msg.RequestID, msg.Data)
 }

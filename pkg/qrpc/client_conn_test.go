@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -42,8 +43,9 @@ func TestClientConn_Invoke(t *testing.T) {
 
 	ctx := context.Background()
 	msg := Message{
-		Method: "Hello",
-		Data:   []byte("testdata"),
+		Method:    "Hello",
+		RequestID: uuid.New().String(),
+		Data:      []byte("testdata"),
 	}
 
 	p.On("Produce", ctx, msg).Return(nil)

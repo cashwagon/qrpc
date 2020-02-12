@@ -12,6 +12,7 @@ import (
 
 	"github.com/cashwagon/qrpc/pkg/qrpc"
 	"github.com/golang/protobuf/proto"
+	"github.com/google/uuid"
 
 	{{- range .Imports }}
 	{{ .Alias }} "{{ .Package }}"
@@ -31,7 +32,7 @@ const _ = qrpc.SupportPackageIsVersion{{ .GeneratedCodeVersion }}
 // {{ $clientInt }} is the client API for {{ $service }} service.
 type {{ $clientInt }} interface {
 	{{- range .Methods }}
-	{{ .Name }}(context.Context, *{{ .InType }}) error
+	{{ .Name }}(ctx context.Context, in *{{ .InType }}) (string, error)
 	{{- end }}
 }
 
@@ -46,16 +47,19 @@ func New{{ $clientInt }}(cc *qrpc.ClientConn) {{ $clientInt }} {
 
 {{- range .Methods }}
 
-func (c *{{ $clientType }}) {{ .Name }}(ctx context.Context, in *{{ .InType }}) error {
+func (c *{{ $clientType }}) {{ .Name }}(ctx context.Context, in *{{ .InType }}) (string, error) {
 	data, err := proto.Marshal(in)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return c.cc.Invoke(ctx, qrpc.Message{
-		Method: "{{ .Name }}",
-		Data:   data,
-	})
+	msg := qrpc.Message{
+		Method:    "{{ .Name }}",
+		RequestID: uuid.New().String(),
+		Data:      data,
+	}
+
+	return msg.RequestID, c.cc.Invoke(ctx, msg)
 }
 {{- end }}
 
@@ -64,7 +68,7 @@ func (c *{{ $clientType }}) {{ .Name }}(ctx context.Context, in *{{ .InType }}) 
 // {{ $serverInt }} is the server API for {{ $service }} service.
 type {{ $serverInt }} interface {
 	{{- range (.Methods | filterBinaryMethods) }}
-	{{ .Name }}(context.Context, *{{ .OutType }}) error
+	{{ .Name }}(ctx context.Context, reqID string, out *{{ .OutType }}) error
 	{{- end }}
 }
 
@@ -74,14 +78,14 @@ func Register{{ $serverInt }}(s *qrpc.Server, srv {{ $serverInt }}) {
 
 {{- range (.Methods | filterBinaryMethods) }}
 
-func _{{ $service }}_{{ .Name }}_Handler(srv interface{}, ctx context.Context, msg []byte) error {
-	in := new({{ .OutType }})
+func _{{ $service }}_{{ .Name }}_Handler(srv interface{}, ctx context.Context, reqID string, msg []byte) error {
+	out := new({{ .OutType }})
 
-	if err := proto.Unmarshal(msg, in); err != nil {
+	if err := proto.Unmarshal(msg, out); err != nil {
 		return err
 	}
 
-	return srv.({{ $serverInt }}).{{ .Name }}(ctx, in)
+	return srv.({{ $serverInt }}).{{ .Name }}(ctx, reqID, out)
 }
 {{- end }}
 

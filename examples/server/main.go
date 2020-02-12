@@ -11,16 +11,21 @@ import (
 	"github.com/segmentio/kafka-go"
 
 	"github.com/cashwagon/qrpc/examples/pb"
+	pbh "github.com/cashwagon/qrpc/examples/pb/handler"
 )
 
 const (
-	groupID = "qrpc-examples-group"
+	groupID = "qrpc-examples-handler-group"
 )
 
-type Server struct{}
+type Server struct {
+	cli pbh.EchoAPIClient
+}
 
-func (s *Server) Echo(ctx context.Context, in *pb.EchoRequest) error {
-	log.Printf("Received: %s", in.GetGreeting())
+func (s *Server) Echo(ctx context.Context, reqID string, in *pb.EchoRequest) error {
+	log.Printf("RequestID: %s - Received request: %s", reqID, in.GetGreeting())
+
+	s.cli.Echo(ctx, reqID, &pb.EchoResponse{Greeting: in.GetGreeting()})
 	return nil
 }
 
@@ -32,6 +37,21 @@ func main() {
 
 	brokers := strings.Split(brokersList, ",")
 
+	conn := qrpc.NewClientConn(
+		driver.NewProducer(&kafka.WriterConfig{
+			Brokers:  brokers,
+			Balancer: &kafka.LeastBytes{},
+		}),
+		"examples",
+	)
+	defer func() {
+		if err := conn.Close(); err != nil {
+			log.Fatalf("Failed to close connection: %v", err)
+		}
+	}()
+
+	cli := pbh.NewEchoAPIClient(conn)
+
 	srv := qrpc.NewServer(
 		driver.NewConsumer(&kafka.ReaderConfig{
 			Brokers: brokers,
@@ -40,7 +60,7 @@ func main() {
 		"examples",
 	)
 
-	pb.RegisterEchoAPIServer(srv, &Server{})
+	pbh.RegisterEchoAPIServer(srv, &Server{cli})
 
 	defer func() {
 		if err := srv.Stop(); err != nil {
