@@ -12,33 +12,41 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type protocGenGoTestExepectation struct {
-	resultFile string
-	goldenFile string
-}
-
 var protocGenGoTests = []struct {
-	name         string
-	args         []string
-	expectations []protocGenGoTestExepectation
+	name   string
+	args   []string
+	result string
+	golden string
 }{
+	{
+		"Basic",
+		[]string{
+			"-I=./test/proto",
+			"--go_out=paths=source_relative:./test/result",
+			"./test/proto/test_api.proto",
+		},
+		"test_api.pb.go",
+		"test_api.pb.go.basic.golden",
+	},
+	{
+		"GRPC",
+		[]string{
+			"-I=./test/proto",
+			"--go_out=plugins=grpc,paths=source_relative:./test/result",
+			"./test/proto/test_api.proto",
+		},
+		"test_api.pb.go",
+		"test_api.pb.go.grpc.golden",
+	},
 	{
 		"QRPC",
 		[]string{
 			"-I=./test/proto",
-			"--qrpcgo_out=./test/result",
+			"--go_out=plugins=qrpc,paths=source_relative:./test/result",
 			"./test/proto/test_api.proto",
 		},
-		[]protocGenGoTestExepectation{
-			{
-				"caller/test_api.pb.go",
-				"caller/test_api.pb.go.golden",
-			},
-			{
-				"handler/test_api.pb.go",
-				"handler/test_api.pb.go.golden",
-			},
-		},
+		"test_api.pb.go",
+		"test_api.pb.go.qrpc.golden",
 	},
 }
 
@@ -68,12 +76,10 @@ func Test_ProtocGenGo(t *testing.T) {
 			output, err := cmd.CombinedOutput()
 			require.NoError(t, err, "Cannot execute protoc '%s':\n%s", protocBin, output)
 
-			for _, exp := range tt.expectations {
-				result := loadResult(t, exp.resultFile)
-				golden := loadGolden(t, exp.goldenFile)
+			result := loadResult(t, tt.result)
+			golden := loadGolden(t, tt.golden)
 
-				assert.Equal(t, string(golden), string(result))
-			}
+			assert.Equal(t, string(golden), string(result))
 		})
 	}
 }

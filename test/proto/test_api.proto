@@ -7,30 +7,29 @@ option go_package = "github.com/cashwagon/qrpc/test/pb";
 
 // TestAPI provides methods to test qRPC.
 service TestAPI {
-  // UnaryMethod tests unary method.
-  rpc UnaryMethod(UnaryMethodRequest) returns (google.protobuf.Empty);
+  option deprecated = true;
 
-  // BinaryMethod tests binary method.
-  rpc BinaryMethod(BinaryMethodRequest) returns (BinaryMethodResponse);
-}
+  // ForwardMethod tests forward method.
+  rpc ForwardMethod(Request) returns (google.protobuf.Empty);
 
-// Test2API provides methods to test qRPC.
-service Test2API {
+  // BackwardMethod tests backward method.
+  rpc BackwardMethod(google.protobuf.Empty) returns (Response);
+
+  // BidirectionalMethod tests bidirectional method.
+  rpc BidirectionalMethod(Request) returns (Response) {
+    option deprecated = true;
+  };
+
   // EmptyMethod tests empty method.
   rpc EmptyMethod(google.protobuf.Empty) returns (google.protobuf.Empty);
 }
 
-// UnaryMethodRequest - request message for UnaryMethod rpc.
-message UnaryMethodRequest {
+// Request - request message for TestAPI service.
+message Request {
   string uid = 1;
 }
 
-// BinaryMethodRequest - request message for BinaryMethod rpc.
-message BinaryMethodRequest {
-  string uid = 1;
-}
-
-// BinaryMethodResponse - response message for BinaryMethod rpc.
-message BinaryMethodResponse {
+// Response - response message for TestAPI service.
+message Response {
   string uid = 1;
 }

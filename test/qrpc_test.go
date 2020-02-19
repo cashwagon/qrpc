@@ -14,35 +14,29 @@ import (
 	driver "github.com/cashwagon/qrpc/pkg/drivers/kafka"
 	"github.com/cashwagon/qrpc/pkg/qrpc"
 	"github.com/cashwagon/qrpc/test/pb"
-	"github.com/cashwagon/qrpc/test/pb/caller"
-	"github.com/cashwagon/qrpc/test/pb/handler"
 )
 
 const (
-	firstUID    = "12345"
-	secondUID   = "54321"
+	requestUID  = "12345"
+	responseUID = "54321"
 	topicPrefix = "test"
 )
 
+var (
+	forwardReqID       string
+	backwardReqID      string
+	bidirectionalReqID string
+)
+
 type handlerServer struct {
-	t           *testing.T
-	brokers     []string
-	done        chan struct{}
-	unaryReqID  string
-	binaryReqID string
+	t       *testing.T
+	brokers []string
+	done    chan struct{}
 }
 
-func (s *handlerServer) UnaryMethod(ctx context.Context, reqID string, req *pb.UnaryMethodRequest) error {
-	assert.Equal(s.t, s.unaryReqID, reqID)
-	assert.Equal(s.t, firstUID, req.GetUid())
-	s.done <- struct{}{}
-
-	return nil
-}
-
-func (s *handlerServer) BinaryMethod(ctx context.Context, reqID string, req *pb.BinaryMethodRequest) error {
-	assert.Equal(s.t, s.binaryReqID, reqID)
-	assert.Equal(s.t, secondUID, req.GetUid())
+func (s *handlerServer) BidirectionalMethod(ctx context.Context, reqID string, req *pb.Request) error {
+	assert.Equal(s.t, bidirectionalReqID, reqID)
+	assert.Equal(s.t, requestUID, req.GetUid())
 
 	// Initialize handler client
 	conn := initQRPCClientConn(s.brokers)
@@ -51,12 +45,14 @@ func (s *handlerServer) BinaryMethod(ctx context.Context, reqID string, req *pb.
 		require.NoError(s.t, conn.Close(), "cannot close handler client connection")
 	}()
 
-	cli := handler.NewTestAPIClient(conn)
+	cli := pb.NewHandlerTestAPIClient(conn)
 
 	// Send response
-	err := cli.BinaryMethod(ctx, reqID, &pb.BinaryMethodResponse{
-		Uid: req.GetUid(),
-	})
+	err := cli.BidirectionalMethod(ctx, reqID, &pb.Response{Uid: responseUID})
+	require.NoError(s.t, err)
+
+	// Call backward method
+	backwardReqID, err = cli.BackwardMethod(ctx, &pb.Response{Uid: responseUID})
 	require.NoError(s.t, err)
 
 	s.done <- struct{}{}
@@ -64,15 +60,33 @@ func (s *handlerServer) BinaryMethod(ctx context.Context, reqID string, req *pb.
 	return nil
 }
 
-type callerServer struct {
-	t     *testing.T
-	done  chan struct{}
-	reqID string
+func (s *handlerServer) ForwardMethod(ctx context.Context, reqID string, req *pb.Request) error {
+	assert.Equal(s.t, forwardReqID, reqID)
+	assert.Equal(s.t, requestUID, req.GetUid())
+
+	s.done <- struct{}{}
+
+	return nil
 }
 
-func (s *callerServer) BinaryMethod(ctx context.Context, reqID string, resp *pb.BinaryMethodResponse) error {
-	assert.Equal(s.t, s.reqID, reqID)
-	assert.Equal(s.t, secondUID, resp.GetUid())
+type callerServer struct {
+	t    *testing.T
+	done chan struct{}
+}
+
+func (s *callerServer) BidirectionalMethod(ctx context.Context, reqID string, resp *pb.Response) error {
+	assert.Equal(s.t, bidirectionalReqID, reqID)
+	assert.Equal(s.t, responseUID, resp.GetUid())
+
+	s.done <- struct{}{}
+
+	return nil
+}
+
+func (s *callerServer) BackwardMethod(ctx context.Context, reqID string, resp *pb.Response) error {
+	assert.Equal(s.t, backwardReqID, reqID)
+	assert.Equal(s.t, responseUID, resp.GetUid())
+
 	s.done <- struct{}{}
 
 	return nil
@@ -99,7 +113,7 @@ func TestQRPCKafka(t *testing.T) {
 
 	// Intitialize and start handler server
 	hsrv := initQRPCServer(brokers, "qrpc-test-group-handler")
-	handler.RegisterTestAPIServer(hsrv, hs)
+	pb.RegisterHandlerTestAPIServer(hsrv, hs)
 
 	go func() {
 		require.NoError(t, hsrv.Start(), "unexpected handler server exit")
@@ -117,7 +131,7 @@ func TestQRPCKafka(t *testing.T) {
 
 	// Initialize and start caller server
 	csrv := initQRPCServer(brokers, "qrpc-test-group-caller")
-	caller.RegisterTestAPIServer(csrv, cs)
+	pb.RegisterCallerTestAPIServer(csrv, cs)
 
 	go func() {
 		require.NoError(t, csrv.Start(), "unexpected caller server exit")
@@ -129,24 +143,19 @@ func TestQRPCKafka(t *testing.T) {
 
 	// Initialize caller client
 	conn := initQRPCClientConn(brokers)
-	cli := caller.NewTestAPIClient(conn)
+	cli := pb.NewCallerTestAPIClient(conn)
+
+	var err error
 
 	// Send first request
-	unaryReqID, err := cli.UnaryMethod(ctx, &pb.UnaryMethodRequest{
-		Uid: firstUID,
-	})
+	forwardReqID, err = cli.ForwardMethod(ctx, &pb.Request{Uid: requestUID})
 	assert.NoError(t, err)
-	assert.NotEmpty(t, unaryReqID)
-	hs.unaryReqID = unaryReqID
+	assert.NotEmpty(t, forwardReqID)
 
 	// Send second request
-	binaryReqID, err := cli.BinaryMethod(ctx, &pb.BinaryMethodRequest{
-		Uid: secondUID,
-	})
+	bidirectionalReqID, err = cli.BidirectionalMethod(ctx, &pb.Request{Uid: requestUID})
 	assert.NoError(t, err)
-	assert.NotEmpty(t, binaryReqID)
-	hs.binaryReqID = binaryReqID
-	cs.reqID = binaryReqID
+	assert.NotEmpty(t, bidirectionalReqID)
 
 	// Close connection to flush producer buffer
 	err = conn.Close()
@@ -155,6 +164,7 @@ func TestQRPCKafka(t *testing.T) {
 	// Wait for processing requests
 	<-hs.done
 	<-hs.done
+	<-cs.done
 	<-cs.done
 }
 
