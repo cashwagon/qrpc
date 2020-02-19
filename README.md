@@ -6,7 +6,7 @@ This project includes qRPC generator and Go library.
 
 ## Generator
 
-qRPC provides custom generator `protoc-gen-qrpcgo`
+qRPC provides custom [protoc-gen-go](https://github.com/golang/protobuf/tree/master/protoc-gen-go) extended with qRPC plugin.
 
 ### Installation
 
@@ -22,22 +22,22 @@ To use this software, you must:
 - Grab the code from the repository and install the `proto` package.
   The simplest way is to run:
   ```
-  go get -u github.com/cashwagon/qrpc/cmd/protoc-gen-qrpcgo
+  go get -u github.com/cashwagon/qrpc/cmd/protoc-gen-go
   ```
-  The compiler plugin, `protoc-gen-qrpcgo`, will be installed in `$GOPATH/bin`
+  The compiler plugin, `protoc-gen-go`, will be installed in `$GOPATH/bin`
   unless `$GOBIN` is set. It must be in your `$PATH` for the protocol
   compiler, `protoc`, to find it.
 
-**Note**: protoc-gen-qrpcgo must be used with [protoc-gen-go](https://github.com/golang/protobuf).
+**Important**: You need to override original protoc-gen-go.
 
 ### Usage
 
 How to use protoc-gen-go https://github.com/golang/protobuf/blob/master/README.md#using-protocol-buffers-with-go
 
-To generate code compatible with qRPC pass the `qrpcgo_out` parameter to protoc alongs with `go_out`:
+To generate code compatible with qRPC pass the `plugins` parameter to protoc-gen-go:
 
 ```shell
-protoc --go_out=paths=source_relative:. --qrpcgo_out=. *.proto
+protoc --go_out=plugins=qrpc:. *.proto
 ```
 
 ## Library
