@@ -19,12 +19,14 @@ const handlerTemplate = `
 // {{ $clientInt }} is the handler client API for {{ $service }} service.
 // It should be used to send response to the caller.
 {{- if .IsDeprecated }}
+//
 // Deprecated: Do not use.
 {{- end }}
 type {{ $clientInt }} interface {
 	{{- range .BidirectionalMethods }}
 	{{ .Comment }}
 	{{- if .IsDeprecated }}
+	//
 	// Deprecated: Do not use.
 	{{- end }}
 	{{ .Name }}(ctx {{ $contextPkg }}.Context, reqID string, out *{{ .OutType }}) error
@@ -33,6 +35,7 @@ type {{ $clientInt }} interface {
 	{{- range .BackwardMethods }}
 	{{ .Comment }}
 	{{- if .IsDeprecated }}
+	//
 	// Deprecated: Do not use.
 	{{- end }}
 	{{ .Name }}(ctx {{ $contextPkg }}.Context, out *{{ .OutType }}) (string, error)
@@ -44,6 +47,7 @@ type {{ $clientType }} struct {
 }
 
 {{- if .IsDeprecated }}
+//
 // Deprecated: Do not use.
 {{- end }}
 func New{{ $clientInt }}(cc *{{ $qrpcPkg }}.ClientConn) {{ $clientInt }} {
@@ -55,6 +59,7 @@ func New{{ $clientInt }}(cc *{{ $qrpcPkg }}.ClientConn) {{ $clientInt }} {
 
 {{ .Comment }}
 {{- if .IsDeprecated }}
+//
 // Deprecated: Do not use.
 {{- end }}
 func (c *{{ $clientType }}) {{ .Name }}(ctx {{ $contextPkg }}.Context, reqID string, out *{{ .OutType }}) error {
@@ -75,6 +80,7 @@ func (c *{{ $clientType }}) {{ .Name }}(ctx {{ $contextPkg }}.Context, reqID str
 
 {{ .Comment }}
 {{- if .IsDeprecated }}
+//
 // Deprecated: Do not use.
 {{- end }}
 func (c *{{ $clientType }}) {{ .Name }}(ctx {{ $contextPkg }}.Context, out *{{ .OutType }}) (string, error) {
@@ -94,14 +100,18 @@ func (c *{{ $clientType }}) {{ .Name }}(ctx {{ $contextPkg }}.Context, out *{{ .
 {{- end }}
 {{- end }}
 
+{{- if (.ForwardMethods | concat .BidirectionalMethods) }}
+
 // {{ $serverInt }} is the handler server API for {{ $service }} service.
 {{- if .IsDeprecated }}
+//
 // Deprecated: Do not use.
 {{- end }}
 type {{ $serverInt }} interface {
 	{{- range (.ForwardMethods | concat .BidirectionalMethods) }}
 	{{ .Comment }}
 	{{- if .IsDeprecated }}
+	//
 	// Deprecated: Do not use.
 	{{- end }}
 	{{ .Name }}(ctx {{ $contextPkg }}.Context, reqID string, in *{{ .InType }}) error
@@ -109,6 +119,7 @@ type {{ $serverInt }} interface {
 }
 
 {{- if .IsDeprecated }}
+//
 // Deprecated: Do not use.
 {{- end }}
 func Register{{ $serverInt }}(s *{{ $qrpcPkg }}.Server, srv {{ $serverInt }}) {
@@ -140,5 +151,6 @@ var _Handler{{ $service }}_serviceDesc = {{ $qrpcPkg }}.ServiceDesc{
 		{{- end }}
 	},
 }
+{{- end }}
 {{- end }}
 `

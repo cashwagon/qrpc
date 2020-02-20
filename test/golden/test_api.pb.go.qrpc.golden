@@ -145,9 +145,11 @@ const _ = qrpc.SupportPackageIsVersion1
 // Caller API description
 
 // CallerTestAPIClient is the caller client API for TestAPI service.
+//
 // Deprecated: Do not use
 type CallerTestAPIClient interface {
 	// BidirectionalMethod tests bidirectional method.
+	//
 	// Deprecated: Do not use.
 	BidirectionalMethod(ctx context.Context, in *Request) (string, error)
 	// ForwardMethod tests forward method.
@@ -158,6 +160,7 @@ type callerTestAPIClient struct {
 	cc *qrpc.ClientConn
 }
 
+//
 // Deprecated: Do not use.
 func NewCallerTestAPIClient(cc *qrpc.ClientConn) CallerTestAPIClient {
 	cc.SetService("qrpc.test.api.TestAPI.in")
@@ -165,6 +168,7 @@ func NewCallerTestAPIClient(cc *qrpc.ClientConn) CallerTestAPIClient {
 }
 
 // BidirectionalMethod tests bidirectional method.
+//
 // Deprecated: Do not use.
 func (c *callerTestAPIClient) BidirectionalMethod(ctx context.Context, in *Request) (string, error) {
 	data, err := proto.Marshal(in)
@@ -199,15 +203,18 @@ func (c *callerTestAPIClient) ForwardMethod(ctx context.Context, in *Request) (s
 
 // CallerTestAPIServer is the caller server API for TestAPI service.
 // It should be used to handle responses from backward methods and bidirectional methods.
+//
 // Deprecated: Do not use.
 type CallerTestAPIServer interface {
 	// BidirectionalMethod tests bidirectional method.
+	//
 	// Deprecated: Do not use.
 	BidirectionalMethod(ctx context.Context, reqID string, out *Response) error
 	// BackwardMethod tests backward method.
 	BackwardMethod(ctx context.Context, reqID string, out *Response) error
 }
 
+//
 // Deprecated: Do not use.
 func RegisterCallerTestAPIServer(s *qrpc.Server, srv CallerTestAPIServer) {
 	s.RegisterService(&_CallerTestAPI_serviceDesc, srv)
@@ -252,9 +259,11 @@ var _CallerTestAPI_serviceDesc = qrpc.ServiceDesc{
 
 // HandlerTestAPIClient is the handler client API for TestAPI service.
 // It should be used to send response to the caller.
+//
 // Deprecated: Do not use.
 type HandlerTestAPIClient interface {
 	// BidirectionalMethod tests bidirectional method.
+	//
 	// Deprecated: Do not use.
 	BidirectionalMethod(ctx context.Context, reqID string, out *Response) error
 	// BackwardMethod tests backward method.
@@ -265,6 +274,7 @@ type handlerTestAPIClient struct {
 	cc *qrpc.ClientConn
 }
 
+//
 // Deprecated: Do not use.
 func NewHandlerTestAPIClient(cc *qrpc.ClientConn) HandlerTestAPIClient {
 	cc.SetService("qrpc.test.api.TestAPI.out")
@@ -272,6 +282,7 @@ func NewHandlerTestAPIClient(cc *qrpc.ClientConn) HandlerTestAPIClient {
 }
 
 // BidirectionalMethod tests bidirectional method.
+//
 // Deprecated: Do not use.
 func (c *handlerTestAPIClient) BidirectionalMethod(ctx context.Context, reqID string, out *Response) error {
 	data, err := proto.Marshal(out)
@@ -303,15 +314,18 @@ func (c *handlerTestAPIClient) BackwardMethod(ctx context.Context, out *Response
 }
 
 // HandlerTestAPIServer is the handler server API for TestAPI service.
+//
 // Deprecated: Do not use.
 type HandlerTestAPIServer interface {
 	// BidirectionalMethod tests bidirectional method.
+	//
 	// Deprecated: Do not use.
 	BidirectionalMethod(ctx context.Context, reqID string, in *Request) error
 	// ForwardMethod tests forward method.
 	ForwardMethod(ctx context.Context, reqID string, in *Request) error
 }
 
+//
 // Deprecated: Do not use.
 func RegisterHandlerTestAPIServer(s *qrpc.Server, srv HandlerTestAPIServer) {
 	s.RegisterService(&_HandlerTestAPI_serviceDesc, srv)

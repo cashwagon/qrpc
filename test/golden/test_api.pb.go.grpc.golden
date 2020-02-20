@@ -135,11 +135,11 @@ var fileDescriptor_77683351be7bc655 = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // TestAPIClient is the client API for TestAPI service.
 //
@@ -152,17 +152,19 @@ type TestAPIClient interface {
 	// BackwardMethod tests backward method.
 	BackwardMethod(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*Response, error)
 	// BidirectionalMethod tests bidirectional method.
+	//
+	// Deprecated: Do not use.
 	BidirectionalMethod(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 	// EmptyMethod tests empty method.
 	EmptyMethod(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type testAPIClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
 // Deprecated: Do not use.
-func NewTestAPIClient(cc *grpc.ClientConn) TestAPIClient {
+func NewTestAPIClient(cc grpc.ClientConnInterface) TestAPIClient {
 	return &testAPIClient{cc}
 }
 
@@ -212,6 +214,8 @@ type TestAPIServer interface {
 	// BackwardMethod tests backward method.
 	BackwardMethod(context.Context, *empty.Empty) (*Response, error)
 	// BidirectionalMethod tests bidirectional method.
+	//
+	// Deprecated: Do not use.
 	BidirectionalMethod(context.Context, *Request) (*Response, error)
 	// EmptyMethod tests empty method.
 	EmptyMethod(context.Context, *empty.Empty) (*empty.Empty, error)

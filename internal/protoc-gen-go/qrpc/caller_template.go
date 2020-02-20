@@ -14,14 +14,18 @@ const callerTemplate = `
 
 // Caller API description
 
+{{- if (.ForwardMethods | concat .BidirectionalMethods) }}
+
 // {{ $clientInt }} is the caller client API for {{ $service }} service.
 {{- if .IsDeprecated }}
+//
 // Deprecated: Do not use
 {{- end }}
 type {{ $clientInt }} interface {
 	{{- range (.ForwardMethods | concat .BidirectionalMethods) }}
     {{ .Comment }}
 	{{- if .IsDeprecated }}
+	//
 	// Deprecated: Do not use.
 	{{- end }}
 	{{ .Name }}(ctx {{ $contextPkg }}.Context, in *{{ .InType }}) (string, error)
@@ -33,6 +37,7 @@ type {{ $clientType }} struct {
 }
 
 {{- if .IsDeprecated }}
+//
 // Deprecated: Do not use.
 {{- end }}
 func New{{ $clientInt }}(cc *{{ $qrpcPkg }}.ClientConn) {{ $clientInt }} {
@@ -44,6 +49,7 @@ func New{{ $clientInt }}(cc *{{ $qrpcPkg }}.ClientConn) {{ $clientInt }} {
 
 {{ .Comment }}
 {{- if .IsDeprecated }}
+//
 // Deprecated: Do not use.
 {{- end }}
 func (c *{{ $clientType }}) {{ .Name }}(ctx {{ $contextPkg }}.Context, in *{{ .InType }}) (string, error) {
@@ -61,18 +67,21 @@ func (c *{{ $clientType }}) {{ .Name }}(ctx {{ $contextPkg }}.Context, in *{{ .I
 	return msg.RequestID, c.cc.Invoke(ctx, msg)
 }
 {{- end }}
+{{- end }}
 
 {{- if (.BackwardMethods | concat .BidirectionalMethods) }}
 
 // {{ $serverInt }} is the caller server API for {{ $service }} service.
 // It should be used to handle responses from backward methods and bidirectional methods.
 {{- if .IsDeprecated }}
+//
 // Deprecated: Do not use.
 {{- end }}
 type {{ $serverInt }} interface {
 	{{- range (.BackwardMethods | concat .BidirectionalMethods) }}
 	{{ .Comment }}
 	{{- if .IsDeprecated }}
+	//
 	// Deprecated: Do not use.
 	{{- end }}
 	{{ .Name }}(ctx {{ $contextPkg }}.Context, reqID string, out *{{ .OutType }}) error
@@ -80,6 +89,7 @@ type {{ $serverInt }} interface {
 }
 
 {{- if .IsDeprecated }}
+//
 // Deprecated: Do not use.
 {{- end }}
 func Register{{ $serverInt }}(s *{{ $qrpcPkg }}.Server, srv {{ $serverInt }}) {
